@@ -2,7 +2,7 @@ Rake::Task[:'deploy:check'].enhance [:'rsync:override_scm']
 Rake::Task[:'deploy:updating'].enhance [:'rsync:override_scm']
 
 namespace :rsync do
-  set :rsync_options, %w(
+  set :withrsync_options, %w(
     --recursive
     --delete
     --delete-excluded
@@ -10,22 +10,22 @@ namespace :rsync do
     --exclude .svn*
   )
 
-  set :rsync_copy_options, %w(
+  set :withrsync_copy_options, %w(
     --archive
     --acls
     --xattrs
   )
 
-  set :rsync_src, 'tmp/deploy'
-  set :rsync_dest, 'shared/deploy'
+  set :withrsync_src, 'tmp/deploy'
+  set :withrsync_dest, 'shared/deploy'
 
-  set :rsync_dest_fullpath, -> {
-    path = fetch(:rsync_dest)
+  set :withrsync_dest_fullpath, -> {
+    path = fetch(:withrsync_dest)
     path = "#{deploy_to}/#{path}" if path && path !~ /^\//
     path
   }
 
-  set :rsync_with_submodules, false
+  set :withrsync_with_submodules, false
 
   desc 'Override scm tasks'
   task :override_scm do
@@ -58,27 +58,27 @@ namespace :rsync do
   desc 'Create a destination for rsync on deployment hosts'
   task :create_dest do
     on release_roles :all do
-      path = File.join fetch(:deploy_to), fetch(:rsync_dest)
+      path = File.join fetch(:deploy_to), fetch(:withrsync_dest)
       execute :mkdir, '-pv', path
     end
   end
 
   desc 'Create a source for rsync'
   task :create_src do
-    next if File.directory? fetch(:rsync_src)
+    next if File.directory? fetch(:withrsync_src)
 
     run_locally do
-      execute :git, :clone, ('--recursive' if fetch(:rsync_with_submodules)), fetch(:repo_url), fetch(:rsync_src)
+      execute :git, :clone, ('--recursive' if fetch(:withrsync_with_submodules)), fetch(:repo_url), fetch(:withrsync_src)
     end
   end
 
   desc 'Stage the repository in a local directory'
   task stage: :'rsync:create_src' do
     run_locally do
-      within fetch(:rsync_src) do
-        execute :git, :fetch, ('--recurse-submodules=on-demand' if fetch(:rsync_with_submodules)), '--quiet --all --prune'
+      within fetch(:withrsync_src) do
+        execute :git, :fetch, ('--recurse-submodules=on-demand' if fetch(:withrsync_with_submodules)), '--quiet --all --prune'
         execute :git, :reset, "--hard origin/#{fetch(:branch)}"
-        execute :git, :submodule, :update, '--init' if fetch(:rsync_with_submodules)
+        execute :git, :submodule, :update, '--init' if fetch(:withrsync_with_submodules)
       end
     end
   end
@@ -88,9 +88,9 @@ namespace :rsync do
     release_roles(:all).each do |server|
       run_locally do
         user = "#{server.user}@" if !server.user.nil?
-        rsync_options = "#{fetch(:rsync_options).join(' ')}"
-        rsync_from = "#{fetch(:rsync_src)}/"
-        rsync_to = Shellwords.escape("#{user}#{server.hostname}:#{fetch(:rsync_dest_fullpath) || release_path}")
+        rsync_options = "#{fetch(:withrsync_options).join(' ')}"
+        rsync_from = "#{fetch(:withrsync_src)}/"
+        rsync_to = Shellwords.escape("#{user}#{server.hostname}:#{fetch(:withrsync_dest_fullpath) || release_path}")
         execute :rsync, rsync_options, rsync_from, rsync_to
       end unless server.roles.empty?
     end
@@ -98,12 +98,12 @@ namespace :rsync do
 
   desc 'Copy the code to the releases directory'
   task release: :'rsync:sync' do
-    next if !fetch(:rsync_dest)
+    next if !fetch(:withrsync_dest)
 
     on release_roles :all do
       execute :rsync,
-        "#{fetch(:rsync_copy_options).join(' ')}",
-        "#{fetch(:rsync_dest_fullpath)}/",
+        "#{fetch(:withrsync_copy_options).join(' ')}",
+        "#{fetch(:withrsync_dest_fullpath)}/",
         "#{release_path}/"
     end
   end
@@ -115,7 +115,7 @@ namespace :rsync do
   desc 'Set the current revision'
   task :set_current_revision do
     run_locally do
-      within fetch(:rsync_src) do
+      within fetch(:withrsync_src) do
         rev = capture(:git, 'rev-parse', '--short', 'HEAD')
         set :current_revision, rev
       end

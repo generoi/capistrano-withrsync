@@ -23,19 +23,14 @@ Installation
 Add this line to your application's Gemfile:
 
 ```ruby
-gem 'capistrano-withrsync'
+gem 'capistrano-withrsync', git: 'https://github.com/generoi/capistrano-withrsync.git'
+
 ```
 
 And then execute:
 
 ```sh
 $ bundle
-```
-
-Or install it yourself as:
-
-```sh
-$ gem install capistrano-withrsync
 ```
 
 Usage
@@ -60,10 +55,10 @@ Set capistrano variables with `set name, value`.
 
 Name          | Default                                                                    | Description
     ------------- | --------                                                                   | ------------
-rsync_src     | tmp/deploy                                                                 | rsync src path
-rsync_dest    | shared/deploy                                                              | rsync dest path
-rsync_options | --recursive --delete --delete-excluded <br>--exclude .git* --exclude .svn* | rsync options
-rsync_with_submodules | false                                                              | fetch and update git submodules for syncing
+withrsync_src     | tmp/deploy                                                                 | rsync src path
+withrsync_dest    | shared/deploy                                                              | rsync dest path
+withrsync_options | --recursive --delete --delete-excluded <br>--exclude .git* --exclude .svn* | rsync options
+withrsync_with_submodules | false                                                              | fetch and update git submodules for syncing
 
 Overview
 --------
